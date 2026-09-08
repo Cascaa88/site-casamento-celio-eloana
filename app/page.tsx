@@ -57,7 +57,22 @@ export default function Casamento() {
     setMusica('');
   };
 
-  const adicionarRecado = async (e: React.FormEvent) => {
+ useEffect(() => {
+  async function buscarRecados() {
+    const { data, error } = await supabase
+      .from('recados')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (data && !error) {
+      setRecados(data);
+    }
+  }
+  buscarRecados();
+}, []);
+
+// 2. Enviar nova mensagem para o banco
+const handleEnviarRecado = async (e: React.FormEvent) => {
   e.preventDefault();
   if (!novoNome.trim() || !novaMensagem.trim()) return;
 
@@ -65,14 +80,6 @@ export default function Casamento() {
     .from('recados')
     .insert([{ nome: novoNome, mensagem: novaMensagem }])
     .select();
-
-  if (!error && data) {
-    setRecados([data[0], ...recados]);
-    setNovoNome('');
-    setNovaMensagem('');
-  } else {
-    alert('Erro ao enviar recado. Tente novamente!');
-  }
 };
 useEffect(() => {
   async function carregarRecados() {
@@ -232,7 +239,7 @@ useEffect(() => {
           <h2 className="text-3xl font-serif text-[#3b4d3c] mb-2 text-center">Mural de Recados</h2>
           <p className="text-xs text-stone-500 mb-8 text-center">Deixe uma mensagem carinhosa para os noivos!</p>
 
-          <form onSubmit={adicionarRecado} className="space-y-4 mb-8">
+          <form onSubmit={handleEnviarRecado} className="space-y-4 mb-8">
             <input
               type="text"
               placeholder="Seu nome"
