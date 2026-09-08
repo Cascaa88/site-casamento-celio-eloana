@@ -1,4 +1,5 @@
 'use client';
+import { supabase } from '@/lib/supabase';
 import React, { useState, useEffect } from 'react';
 
 export default function Casamento() {
@@ -56,14 +57,34 @@ export default function Casamento() {
     setMusica('');
   };
 
-  const adicionarRecado = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (novoNome && novaMensagem) {
-      setRecados([{ nome: novoNome, mensagem: novaMensagem }, ...recados]);
-      setNovoNome('');
-      setNovaMensagem('');
-    }
-  };
+  const adicionarRecado = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!novoNome.trim() || !novaMensagem.trim()) return;
+
+  const { data, error } = await supabase
+    .from('recados')
+    .insert([{ nome: novoNome, mensagem: novaMensagem }])
+    .select();
+
+  if (!error && data) {
+    setRecados([data[0], ...recados]);
+    setNovoNome('');
+    setNovaMensagem('');
+  } else {
+    alert('Erro ao enviar recado. Tente novamente!');
+  }
+};
+useEffect(() => {
+  async function carregarRecados() {
+    const { data } = await supabase
+      .from('recados')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (data) setRecados(data);
+  }
+  carregarRecados();
+}, []);
 
   return (
     <div className="min-h-screen bg-white text-stone-800 font-sans">
