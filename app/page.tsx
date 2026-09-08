@@ -57,41 +57,42 @@ export default function Casamento() {
     setMusica('');
   };
 
- useEffect(() => {
-  async function buscarRecados() {
+  // 1. Carregar recados do Supabase ao abrir a página
+  useEffect(() => {
+    async function carregarRecados() {
+      const { data, error } = await supabase
+        .from('recados')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao buscar recados:', error.message);
+      } else if (data) {
+        setRecados(data);
+      }
+    }
+    carregarRecados();
+  }, []);
+
+  // 2. Enviar novo recado para o banco e atualizar a tela imediatamente
+  const handleEnviarRecado = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!novoNome.trim() || !novaMensagem.trim()) return;
+
     const { data, error } = await supabase
       .from('recados')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .insert([{ nome: novoNome, mensagem: novaMensagem }])
+      .select();
 
-    if (data && !error) {
-      setRecados(data);
+    if (error) {
+      console.error('Erro ao salvar no Supabase:', error.message);
+      alert('Erro ao enviar recado. Verifique as permissões!');
+    } else if (data && data.length > 0) {
+      setRecados([data[0], ...recados]);
+      setNovoNome('');
+      setNovaMensagem('');
     }
-  }
-  buscarRecados();
-}, []);
-
-// 2. Enviar nova mensagem para o banco
-const handleEnviarRecado = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!novoNome.trim() || !novaMensagem.trim()) return;
-
-  const { data, error } = await supabase
-    .from('recados')
-    .insert([{ nome: novoNome, mensagem: novaMensagem }])
-    .select();
-};
-useEffect(() => {
-  async function carregarRecados() {
-    const { data } = await supabase
-      .from('recados')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (data) setRecados(data);
-  }
-  carregarRecados();
-}, []);
+  };
 
   return (
     <div className="min-h-screen bg-white text-stone-800 font-sans">
@@ -150,6 +151,7 @@ useEffect(() => {
           </p>
         </div>
       </section>
+
       {/* TRAJE & PROGRAMAÇÃO */}
       <section className="bg-stone-50 py-16 px-6 border-y border-stone-200/60">
         <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-12">
@@ -173,7 +175,6 @@ useEffect(() => {
                 <span>18:30</span> <strong>Jantar</strong>
               </li>
               <li className="flex justify-between pb-1">
-
               </li>
             </ul>
           </div>
@@ -273,7 +274,8 @@ useEffect(() => {
           </div>
         </div>
       </section>
-{/* RODAPÉ E CRÉDITOS */}
+
+      {/* RODAPÉ E CRÉDITOS */}
       <footer className="bg-[#2e3d2f] text-stone-300 text-xs py-6 text-center border-t border-white/10">
         <p>© 2026 Celio & Eloana. Todos os direitos reservados.</p>
         <p className="mt-1 text-stone-400">
